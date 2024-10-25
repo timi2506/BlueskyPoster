@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var blueskyAPI = BlueskyAPI() // Explicit initialization with ()
+    @StateObject private var blueskyAPI = BlueskyAPI.shared
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var message: String = ""
@@ -65,7 +65,6 @@ struct ContentView: View {
         .padding()
     }
     
-    // Login function
     private func login() {
         blueskyAPI.login(username: username, password: password) { result in
             switch result {
@@ -81,7 +80,6 @@ struct ContentView: View {
         }
     }
     
-    // Post message function
     private func postMessage() {
         blueskyAPI.createPost(message: message) { result in
             switch result {
@@ -99,14 +97,7 @@ struct ContentView: View {
         }
     }
     
-    // Logout function
     private func logout() {
         blueskyAPI.logout()
-    }
-}
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
     }
 }

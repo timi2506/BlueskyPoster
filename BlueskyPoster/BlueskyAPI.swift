@@ -2,16 +2,17 @@ import Foundation
 import Alamofire
 
 class BlueskyAPI: ObservableObject {
+    static let shared = BlueskyAPI()  // Singleton instance
+
     private let accessJwtKey = "accessJwtKey"
     private let didKey = "didKey"
-    
     private let service = "com.yourapp.bluesky" // Replace with your app's bundle identifier
     
     @Published var accessJwt: String?
     @Published var did: String?
     
-    init() {
-        // Try to load credentials from Keychain on app launch
+    private init() {
+        // Load credentials from Keychain on initialization
         if let jwtData = KeychainHelper.shared.read(service: service, account: accessJwtKey),
            let didData = KeychainHelper.shared.read(service: service, account: didKey) {
             self.accessJwt = String(data: jwtData, encoding: .utf8)
@@ -19,7 +20,6 @@ class BlueskyAPI: ObservableObject {
         }
     }
 
-    // Login function to get access JWT
     func login(username: String, password: String, completion: @escaping (Result<String, Error>) -> Void) {
         let url = "https://bsky.social/xrpc/com.atproto.server.createSession"
         
@@ -38,7 +38,6 @@ class BlueskyAPI: ObservableObject {
                         self.accessJwt = accessJwt
                         self.did = did
                         
-                        // Store the accessJwt and did in Keychain
                         KeychainHelper.shared.save(Data(accessJwt.utf8), service: self.service, account: self.accessJwtKey)
                         KeychainHelper.shared.save(Data(did.utf8), service: self.service, account: self.didKey)
                         
@@ -52,8 +51,7 @@ class BlueskyAPI: ObservableObject {
                 }
             }
     }
-    
-    // Function to create a post
+
     func createPost(message: String, completion: @escaping (Result<Bool, Error>) -> Void) {
         guard let accessJwt = accessJwt, let did = did else {
             let error = NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
@@ -88,22 +86,7 @@ class BlueskyAPI: ObservableObject {
                 }
             }
     }
-
-    // Async wrapper for createPost
-    func createPostAsync(message: String) async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            createPost(message: message) { result in
-                switch result {
-                case .success:
-                    continuation.resume(returning: ())
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-
-    // Logout: Clear the stored credentials
+    
     func logout() {
         accessJwt = nil
         did = nil
